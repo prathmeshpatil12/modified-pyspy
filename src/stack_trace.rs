@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Error, Result};
 
+use chrono::Utc;
 use remoteprocess::{Pid, ProcessMemory};
 use serde_derive::Serialize;
 
@@ -30,6 +31,8 @@ pub struct StackTrace {
     pub frames: Vec<Frame>,
     /// process commandline / parent process info
     pub process_info: Option<Arc<ProcessInfo>>,
+    /// Timestamp for current stack
+    pub timestamp_ns: u64,
 }
 
 /// Information about a single function call in a stack trace
@@ -212,6 +215,7 @@ where
         active: true,
         os_thread_id: thread.native_thread_id(),
         process_info: None,
+        timestamp_ns: Utc::now().timestamp_nanos_opt().unwrap() as u64,
     })
 }
 

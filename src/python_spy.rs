@@ -6,6 +6,7 @@ use std::iter::FromIterator;
 use std::path::Path;
 
 use anyhow::{Context, Error, Result};
+use chrono::{DateTime, Utc};
 use remoteprocess::{Pid, Process, ProcessMemory, Tid};
 
 use crate::config::{Config, LockingStrategy};
@@ -248,6 +249,32 @@ impl PythonSpy {
                 self.config.dump_locals > 0,
                 self.config.lineno,
             )?;
+
+            let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f");
+
+            // Option 1: Simple timestamp
+            println!("Time: [{}]", 
+                timestamp
+            );
+            // println!("Time: {}", elapsed_ms);
+            // println!("Thread ID: {}, GIL: {}", trace.thread_id, trace.owns_gil);
+            // println!("OS Thread ID: {:?}", trace.os_thread_id);
+            // println!("Active: {}", trace.active);
+            let secs= (trace.timestamp_ns) / 1_000_000_000;
+            let nanos = (trace.timestamp_ns as u32) % 1_000_000_000;
+
+            let dt = DateTime::from_timestamp(secs as i64, nanos);
+            println!("Trace Time: {:#?}", dt); // dt.format("%Y-%m-%d %H:%M:%S%.4f"));
+            // println!("Frames:");
+            // for (i, frame) in trace.frames.iter().enumerate() {
+            //     println!(
+            //         "  {}: {} ({}:{})",
+            //         i,
+            //         frame.name,
+            //         frame.filename,
+            //         frame.line
+            //     );
+            // }
 
             // Try getting the native thread id
 

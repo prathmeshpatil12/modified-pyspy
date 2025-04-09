@@ -267,6 +267,8 @@ impl Stats {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use std::io::{Cursor, Read, Seek, SeekFrom};
 
@@ -300,6 +302,7 @@ mod tests {
             owns_gil: false,
             frames: vec![frame],
             process_info: None,
+            timestamp_ns: Utc::now().timestamp_nanos_opt().unwrap() as u64,
         };
 
         stats.record(&trace).unwrap();

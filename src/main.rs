@@ -25,6 +25,7 @@ mod sampler;
 mod speedscope;
 mod stack_trace;
 mod timer;
+mod timestamped_json;
 mod utils;
 mod version;
 
@@ -39,6 +40,7 @@ use console::style;
 use config::{Config, FileFormat, RecordDuration};
 use console_viewer::ConsoleViewer;
 use stack_trace::{Frame, StackTrace};
+use timestamped_json::TimestampedJson;
 
 use chrono::{Local, SecondsFormat};
 
@@ -215,10 +217,10 @@ fn record_samples(pid: remoteprocess::Pid, config: &Config) -> Result<(), Error>
         }
     };
 
+    let mut json_recorder = TimestampedJson::new();
     let mut errors = 0;
     let mut intervals = 0;
     let mut samples = 0;
-    println!();
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
@@ -262,6 +264,7 @@ fn record_samples(pid: remoteprocess::Pid, config: &Config) -> Result<(), Error>
         }
 
         for trace in sample.traces.iter_mut() {
+            print!("{:#?}", trace);
             if !(config.include_idle || trace.active) {
                 continue;
             }
@@ -301,6 +304,7 @@ fn record_samples(pid: remoteprocess::Pid, config: &Config) -> Result<(), Error>
 
             samples += 1;
             output.increment(trace)?;
+            json_recorder.increment(trace)?;
         }
 
         if let Some(sampling_errors) = sample.sampling_errors {
@@ -329,6 +333,15 @@ fn record_samples(pid: remoteprocess::Pid, config: &Config) -> Result<(), Error>
     {
         let mut out_file = std::fs::File::create(&filename)?;
         output.write(&mut out_file)?;
+
+        let json_filename = format!("{}_timestamps.json", filename.trim_end_matches(".svg"));
+        let mut json_file = std::fs::File::create(&json_filename)?;
+        json_recorder.write(&mut json_file)?;
+
+        println!(
+            "{}Wrote timestamped stacks to '{}'",
+            lede, json_filename
+        );
     }
 
     match config.format.as_ref().unwrap() {
